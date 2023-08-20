@@ -29,13 +29,18 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
         let mut key_file_bytes = key_file.as_bytes();
         let certs = pemfile::certs(&mut cert_file_bytes);
         let keys = pemfile::rsa_private_keys(&mut key_file_bytes);
-    
+        
         match (keys, certs) {
-            (Ok(keys), Ok(certs)) if !keys.is_empty() => {
+            (Ok(keys), Ok(certs)) if !keys.is_empty() && !certs.is_empty() => {
                 match RSASigningKey::new(&keys[0]) {
                     Ok(signing_key) => {
                         let key: Arc<Box<dyn SigningKey>> = Arc::new(Box::new(signing_key));
-                        resolver.add(domain, CertifiedKey::new(certs, key)).unwrap();
+                        resolver.add(domain, CertifiedKey::new(certs.clone(), key)).unwrap();
+            
+                        rustls_config.set_single_cert(certs, keys[0].clone()).map_err(|e| {
+                            eprintln!("Failed to set certificate for domain {}: {:?}", domain, e);
+                            std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to set certificate for domain {}", domain))
+                        })?;
                     }
                     Err(_) => {
                         eprintln!("Failed to create signing key for domain {}", domain);
@@ -47,8 +52,8 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
                 }
             }
             _ => eprintln!("Failed to load certs or keys for domain {}", domain),
-        }        
-    }   
+        }
+    }     
 
     rustls_config.cert_resolver = Arc::new(resolver);
 
