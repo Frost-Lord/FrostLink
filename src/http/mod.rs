@@ -3,6 +3,7 @@ use tokio::sync::Mutex;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use std::time::{Instant};
+use std::fs::read_to_string;
 use tokio::io;
 
 pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String)>>>, mut client_stream: TcpStream) -> std::io::Result<()> {
@@ -33,6 +34,19 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String)>>>, mut
             }
         } else {
             eprintln!("Could not connect to {}", location);
+        }
+    } else {
+        let default_file_path = "./default/index.html";
+        match read_to_string(default_file_path) {
+            Ok(contents) => {
+                let response = format!("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n{}", contents);
+                client_stream.write_all(response.as_bytes()).await?;
+            }
+            Err(_) => {
+                let response = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n<html><head><title>Not Found</title></head><body><h1>404 - File Not Found</h1></body></html>";
+                client_stream.write_all(response.as_bytes()).await?;
+                eprintln!("Failed to read the default index.html file from {}", default_file_path);
+            }
         }
     }
 
