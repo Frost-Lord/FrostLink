@@ -18,11 +18,11 @@ async fn main() -> std::io::Result<()> {
     println!("Reverse proxy started on port 443");
 
     loop {
-        let (client_stream, _) = listener_http.accept()?;
-        let configs = shared_configs.clone();
-        tokio::spawn(async move {
-            http::handle_client(configs, TcpStream::from_std(client_stream).unwrap()).await.unwrap();
-        });
+        //let (client_stream, _) = listener_http.accept()?;
+        //let configs = shared_configs.clone();
+        //tokio::spawn(async move {
+        //    http::handle_client(configs, TcpStream::from_std(client_stream).unwrap()).await.unwrap();
+        //});
 
         let (client_stream, _) = listener_https.accept()?;
         let configs = shared_configs.clone();
