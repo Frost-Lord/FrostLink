@@ -1,11 +1,15 @@
 use rustls::{Certificate, PrivateKey};
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Error, ErrorKind};
 use std::path::Path;
 use rustls::internal::pemfile::{certs, rsa_private_keys};
 
 /// Load a certificate from `filename`.
 pub fn load_cert(filename: &Path) -> std::io::Result<Vec<Certificate>> {
+    if !filename.exists() {
+        return Err(Error::new(ErrorKind::NotFound, "File cannot be found"));
+    }
+
     let certfile = File::open(filename)?;
     let mut reader = BufReader::new(certfile);
     certs(&mut reader).map_err(|_| {
@@ -18,6 +22,10 @@ pub fn load_cert(filename: &Path) -> std::io::Result<Vec<Certificate>> {
 
 /// Load a private key from `filename`.
 pub fn load_private_key(filename: &Path) -> std::io::Result<PrivateKey> {
+    if !filename.exists() {
+        return Err(Error::new(ErrorKind::NotFound, "File cannot be found"));
+    }
+
     let rsa_keys = {
         let keyfile = File::open(filename)?;
         let mut reader = BufReader::new(keyfile);

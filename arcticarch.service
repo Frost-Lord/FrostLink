@@ -1,0 +1,13 @@
+[Unit]
+Description=ArcticArch is a reverse proxy written in Rust that supports routing requests from a local server to a specified domain.
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/ArcticArch/
+ExecStart=/usr/bin/cargo run --release
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
