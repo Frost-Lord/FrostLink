@@ -4,7 +4,7 @@ ArcticArch is a reverse proxy written in Rust that supports routing requests fro
 
 ## Features
 
-- Supports HTTP and HTTPS
+- Supports HTTP and HTTPS(coming soon)
 - Configurable through simple configuration files
 - Efficient asynchronous handling of connections
 - Logging of request paths, processing times, and client IP addresses
