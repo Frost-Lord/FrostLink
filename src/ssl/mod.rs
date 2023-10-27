@@ -15,7 +15,7 @@ use rustls::{
 use tokio_rustls::TlsAcceptor;
 use crate::BColors;
 
-pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, colors: BColors, mut client_stream: TcpStream) -> std::io::Result<()> {
+pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, colors: BColors, client_stream: TcpStream) -> std::io::Result<()> {
     let start_time = Instant::now();
 
     let mut buffer = vec![0; 1024];

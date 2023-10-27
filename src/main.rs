@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
 
     let configs = file::read_configs();
     let shared_configs = Arc::new(Mutex::new(configs));
-    let listener_http = TcpListener::bind("0.0.0.0:80")?;
+    let _listener_http = TcpListener::bind("0.0.0.0:80")?;
     let listener_https = TcpListener::bind("0.0.0.0:443")?;
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 80", colors.blue, colors.endc);
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 443", colors.blue, colors.endc);
