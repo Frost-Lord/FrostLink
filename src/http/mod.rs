@@ -5,8 +5,9 @@ use tokio::net::TcpStream;
 use std::time::{Instant};
 use std::fs::read_to_string;
 use tokio::io;
+use crate::BColors;
 
-pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, mut client_stream: TcpStream) -> std::io::Result<()> {
+pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, colors: BColors, mut client_stream: TcpStream) -> std::io::Result<()> {
     let start_time = Instant::now();
 
     let mut buffer = vec![0; 1024];
@@ -31,13 +32,13 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
                     let elapsed_time = start_time.elapsed();
                     println!("Time taken: {:?} : {} : {} : {} : SSL: False", elapsed_time, ip, domain, request_path);
                 } else {
-                    eprintln!("Failed to send response to client");
+                    eprintln!("{}[ARCTICARCH]{} Failed to send response to client", colors.fail, colors.endc);
                 }
             } else {
-                eprintln!("Failed to send request to {}", location);
+                eprintln!("{}[ARCTICARCH]{} Failed to send request to {}{}", colors.fail, colors.endc, location, colors.endc);
             }
         } else {
-            eprintln!("Could not connect to {}", location);
+            eprintln!("{}[ARCTICARCH]{} Could not connect to {}{}", colors.fail, colors.endc, location, colors.endc);
         }
     } else {
         let default_file_path = "./default/index.html";
@@ -49,7 +50,7 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
             Err(_) => {
                 let response = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n<html><head><title>Not Found</title></head><body><h1>404 - File Not Found</h1></body></html>";
                 client_stream.write_all(response.as_bytes()).await?;
-                eprintln!("Failed to read the default index.html file from {}", default_file_path);
+                eprintln!("{}[ARCTICARCH]{} Failed to read the default index.html file from {}{}", colors.fail, colors.endc, default_file_path, colors.endc);
             }
         }
     }

@@ -13,9 +13,9 @@ use rustls::{
     NoClientAuth,
 };
 use tokio_rustls::TlsAcceptor;
-use tokio_rustls::server::TlsStream;
+use crate::BColors;
 
-pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, mut client_stream: TcpStream) -> std::io::Result<()> {
+pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, colors: BColors, mut client_stream: TcpStream) -> std::io::Result<()> {
     let start_time = Instant::now();
 
     let mut buffer = vec![0; 1024];
@@ -38,7 +38,7 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
                         resolver.add(domain, CertifiedKey::new(certs.clone(), key)).unwrap();
             
                         rustls_config.set_single_cert(certs, keys[0].clone()).map_err(|e| {
-                            eprintln!("Failed to set certificate for domain {}: {:?}", domain, e);
+                            eprintln!("{}[ARCTICARCH]{} Failed to create signing key for domain  {}: {:?}", colors.fail, colors.endc, domain, e);
                             std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to set certificate for domain {}", domain))
                         })?;
                     }
@@ -51,7 +51,7 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
                     }
                 }
             }
-            _ => eprintln!("Failed to load certs or keys for domain {}", domain),
+            _ => eprintln!("{}[ARCTICARCH]{} Failed to load certs or keys for domain {}", colors.fail, colors.endc, domain),
         }
     }     
 
@@ -65,19 +65,19 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
     let request_path = request_str.split_whitespace().nth(1).unwrap_or("/").to_string();
 
     let domain_and_location = {
-        eprintln!("Request path: {:?}", request_str.lines());
+        eprintln!("{}[ARCTICARCH]{} Request path: {:?}", colors.fail, colors.endc, request_str.lines());
         let host_header = request_str.lines()
         .find(|line| line.starts_with("Host:"))
         .and_then(|line| line.splitn(2, ':').nth(1))
         .and_then(|host| host.split_whitespace().next())
         .map(|host| host.to_string());
 
-        eprintln!("Host header: {:?}", host_header);
+        eprintln!("{}[ARCTICARCH]{} Host header: {:?}", colors.fail, colors.endc, host_header);
         let configs = configs.lock().await;
         let found_domain = configs.iter().find(|(domain, _, _, _, _)| {
             host_header.as_ref() == Some(&domain)
         });
-        eprintln!("Found domain: {:?}", found_domain);
+        eprintln!("{}[ARCTICARCH]{} Found domain: {:?}", colors.fail, colors.endc, found_domain);
         found_domain.cloned()
     };
 
@@ -94,13 +94,13 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
                 let elapsed_time = start_time.elapsed();
                 println!("Time taken: {:?} : {} : {} : {} : SSL: True", elapsed_time, ip, domain, request_path);
             } else {
-                eprintln!("Failed to send response to client");
+                eprintln!("{}[ARCTICARCH]{} Failed to send response to client", colors.fail, colors.endc);
             }
             } else {
-                eprintln!("SSL Failed to send request to {}", location);
+                eprintln!("{}[ARCTICARCH]{} SSL Failed to send request to {}", colors.fail, colors.endc, location);
             }
         } else {
-            eprintln!("Could not connect to {}", location);
+            eprintln!("{}[ARCTICARCH]{} Could not connect to {}", colors.fail, colors.endc, location);
         }
     } else {
         let default_file_path = "./default/index.html";
@@ -112,7 +112,7 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
             Err(_) => {
                 let response = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n<html><head><title>Not Found</title></head><body><h1>404 - File Not Found</h1></body></html>";
                 tls_stream.write_all(response.as_bytes()).await?;
-                eprintln!("Failed to read the default index.html file from {}", default_file_path);
+                eprintln!("{}[ARCTICARCH]{} Failed to read the default index.html file from {}", colors.fail, colors.endc, default_file_path);
             }
         }
     }
