@@ -4,9 +4,10 @@ mod file;
 mod components;
 
 use tokio::net::TcpListener;
-use tokio::net::TcpStream;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use std::env;
+use dotenv::dotenv;
 
 #[derive(Clone)]
 pub struct BColors {
@@ -39,6 +40,8 @@ impl BColors {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     let colors = BColors::new();
 
     let configs = file::read_configs();
@@ -49,6 +52,11 @@ async fn main() -> std::io::Result<()> {
 
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 80", colors.blue, colors.endc);
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 443", colors.blue, colors.endc);
+
+    if !env::var("USERNAME").is_err() && !env::var("PASSWORD").is_err() && !env::var("USERNAME").unwrap().is_empty() && !env::var("PASSWORD").unwrap().is_empty() {
+        //var listener_dashboard = TcpListener::bind("0.0.0.0:8080").await?;
+        println!("{}[ARCTICARCH]{} Dashboard started on port 8080", colors.blue, colors.endc);
+    }
 
     loop {
         tokio::select! {
