@@ -3,36 +3,36 @@ mod ssl;
 mod file;
 mod components;
 
-use std::net::TcpListener;
+use tokio::net::TcpListener;
+use tokio::net::TcpStream;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tokio::net::TcpStream;
 
 #[derive(Clone)]
 pub struct BColors {
-    pub header: &'static str,
-    pub blue: &'static str,
-    pub cyan: &'static str,
-    pub cyan_green: &'static str,
-    pub warning: &'static str,
-    pub fail: &'static str,
-    pub endc: &'static str,
-    pub bold: &'static str,
-    pub underline: &'static str,
+    pub header: String,
+    pub blue: String,
+    pub cyan: String,
+    pub cyan_green: String,
+    pub warning: String,
+    pub fail: String,
+    pub endc: String,
+    pub bold: String,
+    pub underline: String,
 }
 
 impl BColors {
     fn new() -> Self {
         BColors {
-            header: "\x1b[95m",
-            blue: "\x1b[94m",
-            cyan: "\x1b[96m",
-            cyan_green: "\x1b[92m",
-            warning: "\x1b[93m",
-            fail: "\x1b[91m",
-            endc: "\x1b[0m",
-            bold: "\x1b[1m",
-            underline: "\x1b[4m",
+            header: "\x1b[95m".to_string(),
+            blue: "\x1b[94m".to_string(),
+            cyan: "\x1b[96m".to_string(),
+            cyan_green: "\x1b[92m".to_string(),
+            warning: "\x1b[93m".to_string(),
+            fail: "\x1b[91m".to_string(),
+            endc: "\x1b[0m".to_string(),
+            bold: "\x1b[1m".to_string(),
+            underline: "\x1b[4m".to_string(),
         }
     }
 }
@@ -43,25 +43,29 @@ async fn main() -> std::io::Result<()> {
 
     let configs = file::read_configs();
     let shared_configs = Arc::new(Mutex::new(configs));
-    let _listener_http = TcpListener::bind("0.0.0.0:80")?;
-    let listener_https = TcpListener::bind("0.0.0.0:443")?;
+
+    let listener_http = TcpListener::bind("0.0.0.0:80").await?;
+    let listener_https = TcpListener::bind("0.0.0.0:443").await?;
+
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 80", colors.blue, colors.endc);
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 443", colors.blue, colors.endc);
 
     loop {
-        // Uncomment for HTTP
-        // let (client_stream, _) = listener_http.accept()?;
-        // let configs = shared_configs.clone();
-        // let colors = colors.clone();
-        // tokio::spawn(async move {
-        //     http::handle_client(configs, colors, TcpStream::from_std(client_stream).unwrap()).await.unwrap();
-        // });
-
-        let (client_stream, _) = listener_https.accept()?;
-        let configs = shared_configs.clone();
-        let colors = colors.clone();
-        tokio::spawn(async move {
-            ssl::handle_client(configs, colors, TcpStream::from_std(client_stream).unwrap()).await.unwrap();
-        });
+        tokio::select! {
+            Ok((client_stream, _)) = listener_http.accept() => {
+                let configs = shared_configs.clone();
+                let colors_clone = colors.clone();
+                tokio::spawn(async move {
+                    http::handle_client(configs, colors_clone, client_stream).await.unwrap();
+                });
+            },
+            Ok((client_stream, _)) = listener_https.accept() => {
+                let configs = shared_configs.clone();
+                let colors_clone = colors.clone();
+                tokio::spawn(async move {
+                    ssl::handle_client(configs, colors_clone, client_stream).await.unwrap();
+                });
+            },
+        }
     }
 }
