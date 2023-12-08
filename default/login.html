@@ -49,15 +49,15 @@
               {
                 username: username,
                 password: password,
-              },
-              {
-                headers: {
-                  "Content-Type": "application/json",
-                },
               }
             )
             .then(function (response) {
-              console.log(response.data);
+              if (response.status === 302 || response.data.valid) {
+                document.cookie = `session=${response.data.session_id}`;
+                window.location.href = response.data.location || "/dashboard";
+              } else {
+                console.log("Login failed or other non-redirect response");
+              }
             })
             .catch(function (error) {
               console.log(error);

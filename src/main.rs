@@ -79,8 +79,9 @@ async fn main() -> std::io::Result<()> {
                 });
             },
             Ok((client_stream, _)) = listener_dashboard.as_ref().unwrap().accept() => {
+                let configs = shared_configs.clone();
                 tokio::spawn(async move {
-                    dashboard::handle_request(client_stream).await.unwrap();
+                    dashboard::handle_request(configs, client_stream).await.unwrap();
                 });
             },
         }

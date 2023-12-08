@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reverse Proxy Dashboard</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
-    />
-    <link rel="stylesheet" type="text/css" href="/styles/dashboard.css">
-  </head>
-  <body>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/styles/dashboard.css" />
+</head>
+<body>
     <div class="container">
       <aside class="sidebar">
         <div class="logo">
@@ -31,92 +29,63 @@
           </li>
         </ul>
       </aside>
-      <main class="main-content">
-        <div class="search-bar">
-          <i class="fas fa-search"></i>
-          <input type="text" placeholder="Search Proxies..." />
-        </div>
-        <div class="proxies-grid">
-
-          <div
-            class="proxy-box"
-            onclick="location.href='proxy-management.html';"
-          >
-            <div class="proxy-info">
-              <h3>
-                <i class="fas fa-server"></i> proxyone.example.com
-                <span class="status active"></span>
-              </h3>
-              <p><i class="fas fa-link"></i>http://192.168.1.11</p>
+        <main class="main-content">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search Proxies..." />
             </div>
-            <div class="proxy-details">
-              <p><i class="fas fa-user-friends"></i> Connections: 120</p>
-              <p>
-                <i class="fas fa-tachometer-alt"></i> Data Transferred: 1.2GB
-              </p>
-              <p><i class="fas fa-clock"></i> Last Active: 1 hr ago</p>
-            </div>
-          </div>
-          <div
-          class="proxy-box"
-          onclick="location.href='proxy-management.html';"
-        >
-          <div class="proxy-info">
-            <h3>
-              <i class="fas fa-server"></i> proxyone.example.com
-              <span class="status active"></span>
-            </h3>
-            <p><i class="fas fa-link"></i>http://192.168.1.11</p>
-          </div>
-          <div class="proxy-details">
-            <p><i class="fas fa-user-friends"></i> Connections: 120</p>
-            <p>
-              <i class="fas fa-tachometer-alt"></i> Data Transferred: 1.2GB
-            </p>
-            <p><i class="fas fa-clock"></i> Last Active: 1 hr ago</p>
-          </div>
-        </div>
-        <div
-        class="proxy-box"
-        onclick="location.href='proxy-management.html';"
-      >
-        <div class="proxy-info">
-          <h3>
-            <i class="fas fa-server"></i> proxyone.example.com
-            <span class="status active"></span>
-          </h3>
-          <p><i class="fas fa-link"></i>http://192.168.1.11</p>
-        </div>
-        <div class="proxy-details">
-          <p><i class="fas fa-user-friends"></i> Connections: 120</p>
-          <p>
-            <i class="fas fa-tachometer-alt"></i> Data Transferred: 1.2GB
-          </p>
-          <p><i class="fas fa-clock"></i> Last Active: 1 hr ago</p>
-        </div>
-      </div>
-        </div>
-      </main>
+            <div class="proxies-grid"></div>
+        </main>
     </div>
-  </body>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const searchInput = document.querySelector(".search-bar input");
-      const proxyBoxes = document.querySelectorAll(".proxy-box");
+    <script>
+        function createProxyBox(config) {
+            const proxyBox = document.createElement('div');
+            proxyBox.className = 'proxy-box';
+            proxyBox.onclick = () => location.href = '/dashboard/' + config.domain + 'manage';
 
-      searchInput.addEventListener("input", function (e) {
-        const searchValue = e.target.value.toLowerCase();
+            const proxyInfo = document.createElement('div');
+            proxyInfo.className = 'proxy-info';
+            proxyInfo.innerHTML = `
+                <h3><i class="fas fa-server"></i> ${config.domain} <span class="status active"></span></h3>
+                <p><i class="fas fa-link"></i>${config.host}</p>
+            `;
 
-        proxyBoxes.forEach((box) => {
-          const proxyName = box.querySelector("h3").textContent.toLowerCase();
-          if (proxyName.includes(searchValue)) {
-            box.style.display = "grid";
-          } else {
-            box.style.display = "none";
-          }
+            proxyBox.appendChild(proxyInfo);
+            return proxyBox;
+        }
+
+        axios.post('/api/proxys')
+            .then(function (response) {
+                const configs = response.data.configs;
+                const proxiesGrid = document.querySelector('.proxies-grid');
+
+                configs.forEach(config => {
+                    const proxyBox = createProxyBox(config);
+                    proxiesGrid.appendChild(proxyBox);
+                });
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.querySelector(".search-bar input");
+
+            searchInput.addEventListener("input", function (e) {
+                const searchValue = e.target.value.toLowerCase();
+                const proxyBoxes = document.querySelectorAll(".proxy-box");
+
+                proxyBoxes.forEach((box) => {
+                    const proxyName = box.querySelector("h3").textContent.toLowerCase();
+                    if (proxyName.includes(searchValue)) {
+                        box.style.display = "grid";
+                    } else {
+                        box.style.display = "none";
+                    }
+                });
+            });
         });
-      });
-    });
-  </script>
+    </script>
+</body>
 </html>
