@@ -2,6 +2,7 @@ mod http;
 mod ssl;
 mod file;
 mod components;
+mod dashboard;
 
 use tokio::net::TcpListener;
 use std::sync::Arc;
@@ -53,10 +54,13 @@ async fn main() -> std::io::Result<()> {
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 80", colors.blue, colors.endc);
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 443", colors.blue, colors.endc);
 
-    if !env::var("USERNAME").is_err() && !env::var("PASSWORD").is_err() && !env::var("USERNAME").unwrap().is_empty() && !env::var("PASSWORD").unwrap().is_empty() {
-        //var listener_dashboard = TcpListener::bind("0.0.0.0:8080").await?;
+    let listener_dashboard = if !env::var("USERNAME").is_err() && !env::var("PASSWORD").is_err() && !env::var("USERNAME").unwrap().is_empty() && !env::var("PASSWORD").unwrap().is_empty() {
+        let listener = TcpListener::bind("0.0.0.0:8080").await?;
         println!("{}[ARCTICARCH]{} Dashboard started on port 8080", colors.blue, colors.endc);
-    }
+        Some(listener)
+    } else {
+        None
+    };
 
     loop {
         tokio::select! {
@@ -72,6 +76,11 @@ async fn main() -> std::io::Result<()> {
                 let colors_clone = colors.clone();
                 tokio::spawn(async move {
                     ssl::handle_client(configs, colors_clone, client_stream).await.unwrap();
+                });
+            },
+            Ok((client_stream, _)) = listener_dashboard.as_ref().unwrap().accept() => {
+                tokio::spawn(async move {
+                    dashboard::handle_request(client_stream).await.unwrap();
                 });
             },
         }
