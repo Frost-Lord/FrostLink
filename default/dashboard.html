@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reverse Proxy Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #1e1e1e;
+        color: #fff;
+      }
+
+      .container {
+        display: flex;
+        height: 100vh;
+      }
+
+      .sidebar {
+        width: 250px;
+        background-color: #252526;
+        padding: 20px;
+      }
+
+      .logo h1 {
+        color: #4d9fec;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .logo i {
+        margin-right: 10px;
+      }
+
+      .menu {
+        list-style: none;
+        padding: 0;
+      }
+
+      .menu li a {
+        color: #bbb;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+
+      .menu li a i {
+        margin-right: 10px;
+      }
+
+      .menu li a:hover {
+        background-color: #333;
+      }
+
+      .main-content {
+        flex-grow: 1;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .search-bar {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+        background-color: #333;
+        border-radius: 5px;
+        padding: 10px;
+      }
+
+      .search-bar i {
+        margin-right: 10px;
+        color: #4d9fec;
+      }
+
+      .search-bar input {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        background-color: transparent;
+        color: #fff;
+      }
+
+      .proxies-grid {
+        display: grid;
+        grid-template-columns: repeat(
+          auto-fill,
+          minmax(450px, 1fr)
+        );
+        gap: 30px;
+      }
+
+      .proxy-box {
+        background-color: #2a2d2e;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+
+      .proxy-info {
+        width: 35%;
+        margin-right: 20%;
+      }
+
+      .proxy-info h3,
+      .proxy-info p {
+        margin: 0;
+        color: #fff;
+        font-size: 1.1em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .proxy-info h3 {
+        margin-bottom: 8px;
+      }
+
+      .proxy-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 0.9em;
+        color: #bbb;
+        text-align: left;
+        width: 65%;
+      }
+
+      .proxy-details p {
+        margin: 0;
+      }
+      .proxy-info p i {
+        display: inline-block;
+      }
+
+      .proxy-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .status {
+        height: 12px;
+        width: 12px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .active {
+        background-color: #59c321;
+      }
+
+      .inactive {
+        background-color: #e53e3e;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+        }
+        .main-content {
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <aside class="sidebar">
+        <div class="logo">
+          <h1><i class="fas fa-network-wired"></i> ProxyDash</h1>
+        </div>
+        <ul class="menu">
+          <li>
+            <a href="#dashboard"><i class="fas fa-home"></i> Dashboard</a>
+          </li>
+          <li>
+            <a href="#analytics"><i class="fas fa-chart-bar"></i> Analytics</a>
+          </li>
+          <li>
+            <a href="#logs"><i class="fas fa-file-alt"></i> Logs</a>
+          </li>
+          <li>
+            <a href="#settings"><i class="fas fa-cog"></i> Settings</a>
+          </li>
+        </ul>
+      </aside>
+      <main class="main-content">
+        <div class="search-bar">
+          <i class="fas fa-search"></i>
+          <input type="text" placeholder="Search Proxies..." />
+        </div>
+        <div class="proxies-grid">
+
+          <div
+            class="proxy-box"
+            onclick="location.href='proxy-management.html';"
+          >
+            <div class="proxy-info">
+              <h3>
+                <i class="fas fa-server"></i> Proxy One
+                <span class="status active"></span>
+              </h3>
+              <p><i class="fas fa-link"></i>proxyone.example.com</p>
+            </div>
+            <div class="proxy-details">
+              <p><i class="fas fa-user-friends"></i> Connections: 120</p>
+              <p>
+                <i class="fas fa-tachometer-alt"></i> Data Transferred: 1.2GB
+              </p>
+              <p><i class="fas fa-clock"></i> Last Active: 1 hr ago</p>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </body>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const searchInput = document.querySelector(".search-bar input");
+      const proxyBoxes = document.querySelectorAll(".proxy-box");
+
+      searchInput.addEventListener("input", function (e) {
+        const searchValue = e.target.value.toLowerCase();
+
+        proxyBoxes.forEach((box) => {
+          const proxyName = box.querySelector("h3").textContent.toLowerCase();
+          if (proxyName.includes(searchValue)) {
+            box.style.display = "grid";
+          } else {
+            box.style.display = "none";
+          }
+        });
+      });
+    });
+  </script>
+</html>
