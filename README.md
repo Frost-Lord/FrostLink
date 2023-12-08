@@ -1,6 +1,6 @@
-# ArcticArch
+# FrostLink
 
-ArcticArch is a reverse proxy written in Rust that supports routing requests from a local server to a specified domain. With ArcticArch, you can easily turn a local server running on a specific port, such as `localhost:3000`, into a publicly accessible website connected to `example.com`.
+FrostLink is a reverse proxy written in Rust that supports routing requests from a local server to a specified domain. With FrostLink, you can easily turn a local server running on a specific port, such as `localhost:3000`, into a publicly accessible website connected to `example.com`.
 
 ## Features
 
@@ -38,4 +38,4 @@ Feel free to open issues or submit pull requests if you have ideas or encounter 
 
 ## License
 
-ArcticArch is open-source software, and its license information can be found in the LICENSE file in the repository.
+FrostLink is open-source software, and its license information can be found in the LICENSE file in the repository.
