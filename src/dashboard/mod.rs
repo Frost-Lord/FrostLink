@@ -7,8 +7,7 @@ use std::collections::HashMap;
 use tokio::sync::Mutex;
 use lazy_static::lazy_static;
 use cookie::{Cookie, CookieJar};
-use std::sync::Arc;
-
+use crate::file::SharedConfig;
 mod api;
 
 lazy_static! {
@@ -17,7 +16,7 @@ lazy_static! {
 }
 
 
-pub async fn handle_request(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, mut stream: TcpStream) -> Result<()> {
+pub async fn handle_request(configs: SharedConfig, mut stream: TcpStream) -> Result<()> {
     let mut buffer = [0; 1024];
     let _ = stream.read(&mut buffer).await?;
 

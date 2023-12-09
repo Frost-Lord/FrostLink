@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use std::time::Instant;
@@ -15,14 +14,22 @@ use tokio_rustls::TlsAcceptor;
 use crate::BColors;
 use crate::components;
 
-pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String, String)>>>, colors: BColors, client_stream: TcpStream) -> std::io::Result<()> {
+use crate::file::SharedConfig;
+
+pub async fn handle_client(configs: SharedConfig, colors: BColors, client_stream: TcpStream) -> std::io::Result<()> {
     let start_time = Instant::now();
 
     let mut buffer = vec![0; 1024];
     let mut rustls_config = ServerConfig::new(NoClientAuth::new());
 
     let mut resolver = ResolvesServerCertUsingSNI::new();
-    for (domain, _, _, ssl_certificate, ssl_certificate_key) in configs.lock().await.iter() {
+
+    for config in configs.lock().await.iter() {
+        let domain = &config.domain;
+
+        let ssl_certificate = config.ssl_certificate.as_deref().unwrap_or_default();
+        let ssl_certificate_key = config.ssl_certificate_key.as_deref().unwrap_or_default();
+
         let cert_file = &mut BufReader::new(File::open(Path::new(ssl_certificate))?);
         let key_file = &mut BufReader::new(File::open(Path::new(ssl_certificate_key))?);
 
@@ -74,15 +81,21 @@ pub async fn handle_client(configs: Arc<Mutex<Vec<(String, bool, String, String,
         .map(|host| host.to_string());
 
         //eprintln!("{}[ARCTICARCH]{} Host header: {:?}", colors.fail, colors.endc, host_header);
-        let configs = configs.lock().await;
-        let found_domain = configs.iter().find(|(domain, _, _, _, _)| {
-            host_header.as_ref() == Some(&domain)
+        let configs_guard = configs.lock().await;
+        let found_domain = configs_guard.iter().find(|config| {
+            host_header.as_ref() == Some(&config.domain)
         });
         //eprintln!("{}[ARCTICARCH]{} Found domain: {:?}", colors.fail, colors.endc, found_domain);
         found_domain.cloned()
     };
 
-    if let Some((domain, _, location, ssl_certificate, ssl_certificate_key)) = domain_and_location {
+    if let Some(config) = domain_and_location {
+        let domain = &config.domain;
+        let location = &config.location;
+
+        let ssl_certificate = config.ssl_certificate.as_deref().unwrap_or_default();
+        let ssl_certificate_key = config.ssl_certificate_key.as_deref().unwrap_or_default();
+
         let mut rustls_config = ServerConfig::new(NoClientAuth::new());
         let cert_file = components::load_cert(Path::new(&ssl_certificate))?;
         let key_file = components::load_private_key(Path::new(&ssl_certificate_key))?;
