@@ -3,12 +3,14 @@ mod ssl;
 mod file;
 mod components;
 mod dashboard;
+mod statistics;
 
 use tokio::net::TcpListener;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use std::env;
 use dotenv::dotenv;
+use statistics::ProxyStatistics;
 
 #[derive(Clone)]
 pub struct BColors {
@@ -44,6 +46,10 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let colors = BColors::new();
+
+    let proxy_stats = ProxyStatistics {
+        // ... initialization ...
+    };
 
     let configs = file::read_configs();
     let shared_configs = Arc::new(Mutex::new(configs));

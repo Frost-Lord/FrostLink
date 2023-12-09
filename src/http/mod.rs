@@ -1,56 +1,49 @@
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{self, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
-use std::time::{Instant};
+use std::time::Instant;
 use std::fs::read_to_string;
-use tokio::io;
 use crate::BColors;
 use crate::file::SharedConfig;
 
-pub async fn handle_client(configs: SharedConfig, colors: BColors, mut client_stream: TcpStream) -> std::io::Result<()> {
+pub async fn handle_client(configs: SharedConfig, colors: BColors, mut client_stream: TcpStream) -> io::Result<()> {
     let start_time = Instant::now();
 
     let mut buffer = vec![0; 1024];
     let size = client_stream.read(&mut buffer).await?;
     let request_str = String::from_utf8_lossy(&buffer[0..size]);
-    let request_path = request_str.split_whitespace().nth(1).unwrap_or("/").to_string();
 
-    let domain_and_location = {
-        let configs = configs.lock().await;
-        let found_domain = configs.iter().find(|config| {
-            request_str.contains(&format!("Host: {}", config.domain))
-        });
-        found_domain.cloned()
-    };
+    let configs_lock = configs.lock().await;
+
+    if !configs_lock.iter().any(|config| config.allow_http) {
+        eprintln!("{}[ARCTICARCH]{} HTTP requests are not allowed", colors.fail, colors.endc);
+        return Ok(());
+    }
+
+    let domain_and_location = configs_lock.iter()
+        .find(|config| request_str.contains(&format!("Host: {}", config.domain)))
+        .cloned();
 
     if let Some(config) = domain_and_location {
         if let Ok(mut local_stream) = TcpStream::connect(&config.location).await {
-            if local_stream.write(&buffer[0..size]).await.is_ok() {
+            if local_stream.write_all(&buffer[0..size]).await.is_ok() {
                 if io::copy(&mut local_stream, &mut client_stream).await.is_ok() {
-                    let ip = client_stream.peer_addr().unwrap().ip();
                     let elapsed_time = start_time.elapsed();
-                    println!("Time taken: {:?} : {} : {} : {} : SSL: False", elapsed_time, ip, config.domain, request_path);
+                    println!("Time taken: {:?} : {} : {} : SSL: False", elapsed_time, client_stream.peer_addr().unwrap().ip(), config.domain);
                 } else {
                     eprintln!("{}[ARCTICARCH]{} Failed to send response to client", colors.fail, colors.endc);
                 }
             } else {
-                eprintln!("{}[ARCTICARCH]{} Failed to send request to {}{}", colors.fail, colors.endc, config.location, colors.endc);
+                eprintln!("{}[ARCTICARCH]{} Failed to send request to {}", colors.fail, colors.endc, config.location);
             }
         } else {
-            eprintln!("{}[ARCTICARCH]{} Could not connect to {}{}", colors.fail, colors.endc, config.location, colors.endc);
+            eprintln!("{}[ARCTICARCH]{} Could not connect to {}", colors.fail, colors.endc, config.location);
         }
     } else {
-        let default_file_path = "./default/index.html";
-        match read_to_string(default_file_path) {
-            Ok(contents) => {
-                let response = format!("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n{}", contents);
-                client_stream.write_all(response.as_bytes()).await?;
-            }
-            Err(_) => {
-                let response = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n<html><head><title>Not Found</title></head><body><h1>404 - File Not Found</h1></body></html>";
-                client_stream.write_all(response.as_bytes()).await?;
-                eprintln!("{}[ARCTICARCH]{} Failed to read the default index.html file from {}{}", colors.fail, colors.endc, default_file_path, colors.endc);
-            }
-        }
+        let response = read_to_string("./default/index.html")
+            .map(|contents| format!("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n{}", contents))
+            .unwrap_or_else(|_| "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n<html><head><title>Not Found</title></head><body><h1>404 - File Not Found</h1></body></html>".to_string());
+
+        client_stream.write_all(response.as_bytes()).await?;
     }
 
     Ok(())

@@ -8,13 +8,24 @@ use std::path::Path;
 use rustls::{
     ServerConfig, NoClientAuth, ResolvesServerCertUsingSNI, 
     internal::pemfile::{certs, pkcs8_private_keys},
-    sign::{CertifiedKey, RSASigningKey}
+    sign::{CertifiedKey, RSASigningKey},
+    Certificate, PrivateKey
 };
 use tokio_rustls::TlsAcceptor;
 use crate::BColors;
 use crate::components;
-
 use crate::file::SharedConfig;
+
+fn load_cert_and_key(cert_path: &Path, key_path: &Path) -> std::io::Result<(Vec<Certificate>, PrivateKey)> {
+    let cert_file = &mut BufReader::new(File::open(cert_path)?);
+    let key_file = &mut BufReader::new(File::open(key_path)?);
+
+    let cert_chain = certs(cert_file)
+        .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse certs"))?;
+    let mut keys = pkcs8_private_keys(key_file)
+        .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Failed to parse keys"))?;
+    Ok((cert_chain, keys.remove(0)))
+}
 
 pub async fn handle_client(configs: SharedConfig, colors: BColors, client_stream: TcpStream) -> std::io::Result<()> {
     let start_time = Instant::now();
@@ -23,43 +34,26 @@ pub async fn handle_client(configs: SharedConfig, colors: BColors, client_stream
     let mut rustls_config = ServerConfig::new(NoClientAuth::new());
 
     let mut resolver = ResolvesServerCertUsingSNI::new();
+    let configs_lock = configs.lock().await;
 
-    for config in configs.lock().await.iter() {
-        let domain = &config.domain;
-
+    for config in configs_lock.iter() {
         let ssl_certificate = config.ssl_certificate.as_deref().unwrap_or_default();
         let ssl_certificate_key = config.ssl_certificate_key.as_deref().unwrap_or_default();
 
-        let cert_file = &mut BufReader::new(File::open(Path::new(ssl_certificate))?);
-        let key_file = &mut BufReader::new(File::open(Path::new(ssl_certificate_key))?);
-
-        let cert_chain = match certs(cert_file) {
-            Ok(c) if !c.is_empty() => c,
-            _ => {
-                eprintln!("{}[ARCTICARCH]{} Failed to parse certs for domain {}", colors.fail, colors.endc, domain);
-                continue;
-            }
-        };
-
-        let keys = match pkcs8_private_keys(key_file) {
-            Ok(k) if !k.is_empty() => k,
-            _ => {
-                eprintln!("{}[ARCTICARCH]{} Failed to parse keys for domain {}", colors.fail, colors.endc, domain);
-                continue;
-            }
-        };
-
-        let key = match RSASigningKey::new(&keys[0]) {
-            Ok(key) => key,
+        match load_cert_and_key(Path::new(&ssl_certificate), Path::new(&ssl_certificate_key)) {
+            Ok((cert_chain, key)) => {
+                let signing_key = RSASigningKey::new(&key)
+                    .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "Failed to create signing key"))?;
+                let certified_key = CertifiedKey::new(cert_chain, Arc::new(Box::new(signing_key)));
+    
+                if resolver.add(&config.domain, certified_key).is_err() {
+                    eprintln!("{}[ARCTICARCH]{} Failed to add certificate for domain {}", colors.fail, colors.endc, &config.domain);
+                }
+            },
             Err(_) => {
-                eprintln!("{}[ARCTICARCH]{} Failed to create signing key for domain {}", colors.fail, colors.endc, domain);
+                eprintln!("{}[ARCTICARCH]{} Failed to load certificate and key for domain {}", colors.fail, colors.endc, &config.domain);
                 continue;
             }
-        };
-        let signing_key = CertifiedKey::new(cert_chain, Arc::new(Box::new(key)));
-
-        if resolver.add(domain, signing_key).is_err() {
-            eprintln!("{}[ARCTICARCH]{} Failed to add certificate for domain {}", colors.fail, colors.endc, domain);
         }
     }
 
@@ -72,22 +66,24 @@ pub async fn handle_client(configs: SharedConfig, colors: BColors, client_stream
     let request_str = String::from_utf8_lossy(&buffer[0..size]);
     let request_path = request_str.split_whitespace().nth(1).unwrap_or("/").to_string();
 
-    let domain_and_location = {
-        //eprintln!("{}[ARCTICARCH]{} Request path: {:?}", colors.fail, colors.endc, request_str.lines());
-        let host_header = request_str.lines()
-        .find(|line| line.starts_with("Host:"))
-        .and_then(|line| line.splitn(2, ':').nth(1))
-        .and_then(|host| host.split_whitespace().next())
-        .map(|host| host.to_string());
+    let allow_ssl = configs_lock.iter().any(|config| config.allow_ssl);
 
-        //eprintln!("{}[ARCTICARCH]{} Host header: {:?}", colors.fail, colors.endc, host_header);
-        let configs_guard = configs.lock().await;
-        let found_domain = configs_guard.iter().find(|config| {
+    if !allow_ssl {
+        eprintln!("{}[ARCTICARCH]{} SSL requests are not allowed", colors.fail, colors.endc);
+        return Ok(());
+    }
+
+    let domain_and_location = {
+        let host_header = request_str.lines()
+            .find(|line| line.starts_with("Host:"))
+            .and_then(|line| line.splitn(2, ':').nth(1))
+            .and_then(|host| host.split_whitespace().next())
+            .map(|host| host.to_string());
+    
+        configs_lock.iter().find(|config| {
             host_header.as_ref() == Some(&config.domain)
-        });
-        //eprintln!("{}[ARCTICARCH]{} Found domain: {:?}", colors.fail, colors.endc, found_domain);
-        found_domain.cloned()
-    };
+        }).cloned()
+    };    
 
     if let Some(config) = domain_and_location {
         let domain = &config.domain;
