@@ -40,7 +40,7 @@ pub async fn handle_api_request(configs: Arc<Mutex<Vec<(String, bool, String, St
             let username = json.get("username").and_then(|u| u.as_str()).unwrap_or("");
             let password = json.get("password").and_then(|p| p.as_str()).unwrap_or("");
 
-            let valid = username == "ewen2076@gmail.com" && password == "Fighting35a";
+            let valid = username == "" && password == "";
             if valid {
                 let session_id = Uuid::new_v4().to_string();
                 let mut sessions = SESSIONS.lock().await;
