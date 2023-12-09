@@ -1,43 +1,57 @@
-# FrostLink
+# ArcticArch
 
-FrostLink is a reverse proxy written in Rust that supports routing requests from a local server to a specified domain. With FrostLink, you can easily turn a local server running on a specific port, such as `localhost:3000`, into a publicly accessible website connected to `example.com`.
-
-
+ArcticArch is a powerful and flexible reverse proxy tool developed in Rust. It's designed to route requests efficiently from public domains to local servers, supporting both HTTP and HTTPS traffic. ArcticArch is particularly useful for exposing local development servers to the internet or for setting up a custom routing scheme in a microservices architecture.
 
 ## Features
 
-- Supports HTTP and HTTPS(coming soon)
-- Configurable through simple configuration files
-- Efficient asynchronous handling of connections
-- Logging of request paths, processing times, and client IP addresses
+- **Support for HTTP and HTTPS**: Handles both unencrypted and encrypted traffic, with easy SSL/TLS setup.
+- **Dynamic Configuration**: Configure your domains and SSL settings using simple `.conf` files.
+- **Asynchronous Processing**: Utilizes Rust's async capabilities for efficient handling of multiple connections.
+- **Detailed Logging**: Logs information about each request, including processing time, client IP address, domain, and request path.
+- **Customizable**: Extendable for various use cases and easily integrable into different environments.
 
-## How to Use
+## Getting Started
 
-1. **Configure Domains:** Create configuration files in the `./domains` directory with the following format:
+### Configuration
+
+ArcticArch requires domain configuration files to be placed in the `./domains` directory. Each file should have the `.conf` extension and follow this structure:
+
+### Running the Proxy
+
+1. **Set Up Configuration Files:** Create `.conf` files for each domain in the `./domains` directory.
+2. **Start ArcticArch:** Execute the main program. By default, it listens on ports 80 (HTTP) and 443 (HTTPS).
+3. **Monitor Activity:** Observe the console output for logs detailing requests and server activity.
+
+### Example Configuration File
+
+example.conf
+```plaintext
+server: {
+    domain: example.com
+    location: localhost:3000
+
+    connection: {
+        AllowSSL: true
+        AllowHTTP: true
+    }
+}
+
+SSLCert: {
+    ssl_certificate: /etc/letsencrypt/live/example.com/fullchain.pem
+    ssl_certificate_key: /etc/letsencrypt/live/example.com/privkey.pem
+}
 ```
-domain: example.com
-ssl: true/false
-location: localhost:3000
-```
-2. **Start the Reverse Proxy:** Run the main program to start the reverse proxy, and it will begin listening on ports 80 and 443 by default.
 
-3. **Monitor Logs:** View the logs to see information about each request, including processing time, client IP address, domain, and request path.
+### Dashboard
 
-## Example Configuration
+ArcticArch includes a user-friendly dashboard for easy monitoring and management. Here's a glimpse of what the dashboard looks like:
 
-You can configure multiple domains by creating `.conf` files inside the `./domains` directory. Here's an example:
+<p align="center">
+    <img src="./images/dashboard.png">
+</p>
 
-### example.conf
-```
-domain: example.com
-ssl: true
-location: localhost:3000
-```
-
-## Contributing
-
+### Contributing
 Feel free to open issues or submit pull requests if you have ideas or encounter issues. Contributions are always welcome!
 
-## License
-
+### License
 FrostLink is open-source software, and its license information can be found in the LICENSE file in the repository.
