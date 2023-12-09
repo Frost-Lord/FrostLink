@@ -47,9 +47,7 @@ async fn main() -> std::io::Result<()> {
 
     let colors = BColors::new();
 
-    let proxy_stats = ProxyStatistics {
-        // ... initialization ...
-    };
+    let proxy_stats = ProxyStatistics::default();
 
     let configs = file::read_configs();
     let shared_configs = Arc::new(Mutex::new(configs));
