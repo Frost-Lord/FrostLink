@@ -54,7 +54,7 @@ async fn main() -> std::io::Result<()> {
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 80", colors.blue, colors.endc);
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 443", colors.blue, colors.endc);
 
-    let listener_dashboard = if !env::var("USERNAME").is_err() && !env::var("PASSWORD").is_err() && !env::var("USERNAME").unwrap().is_empty() && !env::var("PASSWORD").unwrap().is_empty() {
+    let listener_dashboard = if !env::var("USER").is_err() && !env::var("PASSWORD").is_err() && !env::var("USER").unwrap().is_empty() && !env::var("PASSWORD").unwrap().is_empty() {
         let listener = TcpListener::bind("0.0.0.0:8080").await?;
         println!("{}[ARCTICARCH]{} Dashboard started on port 8080", colors.blue, colors.endc);
         Some(listener)
