@@ -38,25 +38,25 @@
           <input type="text" placeholder="Search Proxies..." />
         </div>
         <div class="stats-cards">
-          <div class="card">
+          <div class="card" id="firewall-card">
             <i class="fas fa-shield-alt"></i>
             <h3>Firewall <span class="status active"></span></h3>
-            <p>Blocked: 1204</p>
+            <p>Blocked: Loading...</p>
           </div>
-          <div class="card">
+          <div class="card" id="ddos-attacks-card">
             <i class="fas fa-skull-crossbones"></i>
             <h3>DDoS Attacks <span class="status active"></span></h3>
-            <p>Blocked: 124</p>
+            <p>Blocked: Loading...</p>
           </div>
-          <div class="card">
+          <div class="card" id="active-users-card">
             <i class="fas fa-users"></i>
             <h3>Active Users <span class="status active"></span></h3>
-            <p>Total: 320</p>
+            <p>Total: Loading...</p>
           </div>
-          <div class="card">
+          <div class="card" id="data-usage-card">
             <i class="fas fa-database"></i>
             <h3>Data Usage <span class="status active"></span></h3>
-            <p>Today: 1.4TB</p>
+            <p>Today: Loading...</p>
           </div>
         </div>
         <div class="proxies-grid"></div>
@@ -80,7 +80,7 @@
         const proxyDetails = document.createElement("div");
         proxyDetails.className = "proxy-details";
         proxyDetails.innerHTML = `
-    <p><i class="fas fa-user-friends"></i> Connections: 120</p>
+    <p><i class="fas fa-user-friends"></i> Connections: ${config.total_connections}</p>
     <p><i class="fas fa-tachometer-alt"></i> Data Transferred: 1.2GB</p>
     <p><i class="fas fa-clock"></i> Last Active: 1 hr ago</p>
   `;
@@ -103,6 +103,53 @@
         })
         .catch(function (error) {
           console.log(error);
+        });
+
+      function updateCardData(cardId, data) {
+        const card = document.getElementById(cardId);
+        if (card) {
+          card.querySelector("p").textContent = data;
+        }
+      }
+
+      axios
+        .get("http://localhost:8080/api/system/stats")
+        .then(function (response) {
+          const systemStats = response.data;
+
+          updateCardData(
+            "firewall-card",
+            `Blocked: ${systemStats.system.firewall.blocked}`
+          );
+
+          updateCardData(
+            "ddos-attacks-card",
+            `Blocked: ${systemStats.ddos_attacks.blocked}`
+          );
+
+          // Update the Active Users card
+          const proxiesData = systemStats.proxies;
+          let totalUsers = 0;
+
+          // Loop through each proxy and add up the total connections
+          for (const proxyKey in proxiesData) {
+            if (proxiesData.hasOwnProperty(proxyKey)) {
+              totalUsers += proxiesData[proxyKey].total_connections;
+            }
+          }
+
+          updateCardData(
+            "active-users-card",
+            `Total Connections: ${totalUsers}`
+          );
+
+          updateCardData(
+            "data-usage-card",
+            `Today: ${systemStats.data_usage.download}TB`
+          );
+        })
+        .catch(function (error) {
+          console.error(error);
         });
 
       document.addEventListener("DOMContentLoaded", function () {

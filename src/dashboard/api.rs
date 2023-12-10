@@ -5,6 +5,7 @@ use uuid::Uuid;
 use std::env;
 use crate::dashboard::SESSIONS;
 use crate::file::SharedConfig;
+use crate::statistics::SharedProxyStatistics;
 
 async fn extract_json(buffer: &[u8]) -> Value {
     let buffer_string = std::str::from_utf8(buffer).unwrap_or("");
@@ -31,7 +32,7 @@ fn construct_json_response(data: HashMap<&str, Value>) -> String {
     format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{}", json_body)
 }
 
-pub async fn handle_api_request(configs: SharedConfig, path: &str, buffer: &[u8]) -> Result<String> {
+pub async fn handle_api_request(configs: SharedConfig, proxy_stats: SharedProxyStatistics, path: &str, buffer: &[u8]) -> Result<String> {
     match path {
         "/api/login" => {
             let json = extract_json(buffer).await;
@@ -62,6 +63,9 @@ pub async fn handle_api_request(configs: SharedConfig, path: &str, buffer: &[u8]
         },
         "/api/proxys" => {
             let locked_configs = configs.lock().await;
+            let stats = proxy_stats.lock().await;
+            let proxies = &*stats.proxies.lock().await;
+            
             let configs_json: Vec<_> = locked_configs.iter().map(|config| {
                 let mut config_map = serde_json::Map::new();
                 
@@ -71,12 +75,53 @@ pub async fn handle_api_request(configs: SharedConfig, path: &str, buffer: &[u8]
                 config_map.insert("HTTP".to_string(), serde_json::Value::Bool(config.allow_http));
                 config_map.insert("pubkey".to_string(), config.ssl_certificate.clone().map(serde_json::Value::String).unwrap_or(serde_json::Value::Null));
                 config_map.insert("privkey".to_string(), config.ssl_certificate_key.clone().map(serde_json::Value::String).unwrap_or(serde_json::Value::Null));
-        
+                
+                // Adding total connections for each domain
+                if let Some(proxy_stats) = proxies.get(&config.domain) {
+                    config_map.insert("total_connections".to_string(), serde_json::Value::Number(serde_json::Number::from(proxy_stats.total_connections)));
+                } else {
+                    config_map.insert("total_connections".to_string(), serde_json::Value::Number(serde_json::Number::from(0)));
+                }
+
                 serde_json::Value::Object(config_map)
             }).collect();
         
             let mut data = HashMap::new();
             data.insert("configs", serde_json::Value::Array(configs_json));    
+            
+            Ok(construct_json_response(data))
+        },
+        "/api/system/stats" => {
+            let stats = proxy_stats.lock().await;
+            let proxies = &*stats.proxies.lock().await;
+        
+            let mut proxy_stats_json = serde_json::Map::new();
+            for (domain, stats) in proxies.iter() {
+                proxy_stats_json.insert(domain.clone(), serde_json::json!({
+                    "total_connections": stats.total_connections,
+                }));
+            }
+        
+            let system_stats = &stats.system;
+            let ddos_stats = &stats.ddos_attacks;
+            let data_usage = &stats.data_usage;
+        
+            let mut data = HashMap::new();
+            data.insert("system", serde_json::json!({
+                "firewall": {
+                    "blocked": system_stats.firewall.blocked,
+                    "whitelisted": system_stats.firewall.whitelisted,
+                    "blacklisted": system_stats.firewall.blacklisted,
+                }
+            }));
+            data.insert("ddos_attacks", serde_json::json!({
+                "blocked": ddos_stats.blocked,
+            }));
+            data.insert("data_usage", serde_json::json!({
+                "upload": data_usage.upload,
+                "download": data_usage.download,
+            }));
+            data.insert("proxies", serde_json::Value::Object(proxy_stats_json));
             
             Ok(construct_json_response(data))
         },

@@ -47,8 +47,7 @@ async fn main() -> std::io::Result<()> {
 
     let colors = BColors::new();
 
-    let proxy_stats = ProxyStatistics::default();
-
+    let proxy_stats = Arc::new(Mutex::new(ProxyStatistics::default()));
     let configs = file::read_configs();
     let shared_configs = Arc::new(Mutex::new(configs));
 
@@ -71,21 +70,24 @@ async fn main() -> std::io::Result<()> {
             Ok((client_stream, _)) = listener_http.accept() => {
                 let configs = shared_configs.clone();
                 let colors_clone = colors.clone();
+                let proxy_stats_clone = proxy_stats.clone();
                 tokio::spawn(async move {
-                    http::handle_client(configs, colors_clone, client_stream).await.unwrap();
+                    http::handle_client(configs, proxy_stats_clone, colors_clone, client_stream).await.unwrap();
                 });
             },
             Ok((client_stream, _)) = listener_https.accept() => {
                 let configs = shared_configs.clone();
                 let colors_clone = colors.clone();
+                let proxy_stats_clone = proxy_stats.clone();
                 tokio::spawn(async move {
-                    ssl::handle_client(configs, colors_clone, client_stream).await.unwrap();
+                    ssl::handle_client(configs, proxy_stats_clone, colors_clone, client_stream).await.unwrap();
                 });
             },
             Ok((client_stream, _)) = listener_dashboard.as_ref().unwrap().accept() => {
                 let configs = shared_configs.clone();
+                let proxy_stats_clone = proxy_stats.clone();
                 tokio::spawn(async move {
-                    dashboard::handle_request(configs, client_stream).await.unwrap();
+                    dashboard::handle_request(configs, proxy_stats_clone, client_stream).await.unwrap();
                 });
             },
         }

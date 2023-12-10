@@ -14,7 +14,9 @@ use rustls::{
 use tokio_rustls::TlsAcceptor;
 use crate::BColors;
 use crate::components;
+
 use crate::file::SharedConfig;
+use crate::statistics::SharedProxyStatistics;
 
 fn load_cert_and_key(cert_path: &Path, key_path: &Path) -> std::io::Result<(Vec<Certificate>, PrivateKey)> {
     let cert_file = &mut BufReader::new(File::open(cert_path)?);
@@ -27,7 +29,7 @@ fn load_cert_and_key(cert_path: &Path, key_path: &Path) -> std::io::Result<(Vec<
     Ok((cert_chain, keys.remove(0)))
 }
 
-pub async fn handle_client(configs: SharedConfig, colors: BColors, client_stream: TcpStream) -> std::io::Result<()> {
+pub async fn handle_client(configs: SharedConfig, proxy_stats: SharedProxyStatistics, colors: BColors, client_stream: TcpStream) -> std::io::Result<()> {
     let start_time = Instant::now();
 
     let mut buffer = vec![0; 1024];
@@ -86,6 +88,13 @@ pub async fn handle_client(configs: SharedConfig, colors: BColors, client_stream
     };    
 
     if let Some(config) = domain_and_location {
+        {
+            let stats = proxy_stats.lock().await;
+            let proxies = &mut *stats.proxies.lock().await;
+            let domain_stats = proxies.entry(config.domain.clone()).or_default();
+            domain_stats.total_connections += 1;
+        }
+        
         let domain = &config.domain;
         let location = &config.location;
 

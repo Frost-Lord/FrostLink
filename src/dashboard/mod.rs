@@ -7,7 +7,9 @@ use std::collections::HashMap;
 use tokio::sync::Mutex;
 use lazy_static::lazy_static;
 use cookie::{Cookie, CookieJar};
+
 use crate::file::SharedConfig;
+use crate::statistics::SharedProxyStatistics;
 mod api;
 
 lazy_static! {
@@ -16,7 +18,7 @@ lazy_static! {
 }
 
 
-pub async fn handle_request(configs: SharedConfig, mut stream: TcpStream) -> Result<()> {
+pub async fn handle_request(configs: SharedConfig, proxy_stats: SharedProxyStatistics, mut stream: TcpStream) -> Result<()> {
     let mut buffer = [0; 1024];
     let _ = stream.read(&mut buffer).await?;
 
@@ -28,7 +30,7 @@ pub async fn handle_request(configs: SharedConfig, mut stream: TcpStream) -> Res
         .unwrap_or("");
 
     if request_path.starts_with("/api/") {
-        let response = api::handle_api_request(configs, request_path, &buffer).await?;
+        let response = api::handle_api_request(configs, proxy_stats, request_path, &buffer).await?;
         stream.write_all(response.as_bytes()).await?;
     } else {
         serve_html_file(&mut stream, request_path, &buffer).await?;

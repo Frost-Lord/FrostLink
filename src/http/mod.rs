@@ -3,9 +3,11 @@ use tokio::net::TcpStream;
 use std::time::Instant;
 use std::fs::read_to_string;
 use crate::BColors;
-use crate::file::SharedConfig;
 
-pub async fn handle_client(configs: SharedConfig, colors: BColors, mut client_stream: TcpStream) -> io::Result<()> {
+use crate::file::SharedConfig;
+use crate::statistics::SharedProxyStatistics;
+
+pub async fn handle_client(configs: SharedConfig, proxy_stats: SharedProxyStatistics, colors: BColors, mut client_stream: TcpStream) -> io::Result<()> {
     let start_time = Instant::now();
 
     let mut buffer = vec![0; 1024];
@@ -24,6 +26,12 @@ pub async fn handle_client(configs: SharedConfig, colors: BColors, mut client_st
         .cloned();
 
     if let Some(config) = domain_and_location {
+        {
+            let stats = proxy_stats.lock().await;
+            let proxies = &mut *stats.proxies.lock().await;
+            let domain_stats = proxies.entry(config.domain.clone()).or_default();
+            domain_stats.total_connections += 1;
+        }
         if let Ok(mut local_stream) = TcpStream::connect(&config.location).await {
             if local_stream.write_all(&buffer[0..size]).await.is_ok() {
                 if io::copy(&mut local_stream, &mut client_stream).await.is_ok() {
