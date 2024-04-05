@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
 #[derive(Clone)]
@@ -61,4 +62,15 @@ pub struct DataUsage {
 #[derive(Clone, Default)]
 pub struct ProxyDomainStats {
     pub total_connections: usize,
+    pub log: Vec<LogEntry>,
+    pub last_active: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct LogEntry {
+    pub domain: String,
+    pub ip: std::net::IpAddr,
+    pub path: Option<String>,
+    pub event: &'static str,
+    pub time: String,
 }

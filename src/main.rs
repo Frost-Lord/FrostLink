@@ -4,6 +4,7 @@ mod file;
 mod components;
 mod dashboard;
 mod statistics;
+mod global;
 
 use tokio::net::TcpListener;
 use std::sync::Arc;

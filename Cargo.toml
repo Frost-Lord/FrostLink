@@ -1,5 +1,5 @@
 [package]
-name = "ArcticArch"
+name = "arctic_arch"
 version = "1.0.0"
 edition = "2021"
 description = "ArcticArch is a reverse proxy written in Rust that supports routing requests from a local server to a specified domain. With ArcticArch, you can easily turn a local server running on a specific port, such as `localhost:3000`, into a publicly accessible website connected to `example.com`."
@@ -16,10 +16,11 @@ tokio-rustls = "0.22.0"
 rustls = "0.19.0"
 dotenv = "0.15.0"
 lazy_static = "1.4.0"
-serde = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 cookie = "0.15.1"
 uuid = { version = "1.0", features = ["v4"] }
+chrono = "0.4"
 
 [dev-dependencies]
 

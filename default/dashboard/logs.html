@@ -1,94 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FrostLink Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="/styles/logs.css">
-</head>
-<body>
-<div class="container">
-  <aside class="sidebar">
-    <div class="logo">
-      <h1><i class="fas fa-network-wired"></i> FrostLink</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FrostLink Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/styles/logs.css" />
+  </head>
+  <body>
+    <div class="container">
+      <aside class="sidebar">
+        <div class="logo">
+          <h1><i class="fas fa-network-wired"></i> FrostLink</h1>
+        </div>
+        <ul class="menu">
+          <li>
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+          </li>
+          <li>
+            <a href="#analytics"><i class="fas fa-chart-bar"></i> Analytics</a>
+          </li>
+          <li class="active">
+            <a href="/dashboard/logs"><i class="fas fa-file-alt"></i> Logs</a>
+          </li>
+          <li>
+            <a href="#settings"><i class="fas fa-cog"></i> Settings</a>
+          </li>
+        </ul>
+      </aside>
+      <main class="main-content">
+        <div class="search-bar">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search-input" placeholder="Search Logs..." />
+        </div>
+        <div class="proxies-logs"></div>
+      </main>
     </div>
-    <ul class="menu">
-      <li><a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
-      <li><a href="#analytics"><i class="fas fa-chart-bar"></i> Analytics</a></li>
-      <li><a href="/dashboard/logs"><i class="fas fa-file-alt"></i> Logs</a></li>
-      <li><a href="#settings"><i class="fas fa-cog"></i> Settings</a></li>
-    </ul>
-  </aside>
-  <main class="main-content">
-    <div class="search-bar">
-      <i class="fas fa-search"></i>
-      <input type="text" placeholder="Search Logs...">
-    </div>
-    <div class="proxies-logs"></div>
-  </main>
-</div>
-<script>
-  function createProxyBox(config) {
-    const proxyContainer = document.createElement("table");
-    proxyContainer.classList.add("proxy-log-container");
+    <script>
+      function createProxyBox(config) {
+        const proxyContainer = document.createElement("table");
+        proxyContainer.classList.add("proxy-log-container");
+        const thead = document.createElement("thead");
+        const headings = ["Domain", "IP", "Path", "Event", "Date"];
+        const headerRow = document.createElement("tr");
+        headings.forEach((heading) => {
+          const headerCell = document.createElement("th");
+          headerCell.textContent = heading;
+          headerRow.appendChild(headerCell);
+        });
+        thead.appendChild(headerRow);
+        proxyContainer.appendChild(thead);
 
-    // Create table headers
-    const thead = document.createElement("thead");
-    const headings = ["Domain", "IP", "Path", "Event", "Date"];
-    const headerRow = document.createElement("tr");
-    headings.forEach(heading => {
-      const headerCell = document.createElement("th");
-      headerCell.textContent = heading;
-      headerRow.appendChild(headerCell);
-    });
-    thead.appendChild(headerRow);
-    proxyContainer.appendChild(thead);
+        const tbody = document.createElement("tbody");
 
-    // Create table body for log entries
-    const tbody = document.createElement("tbody");
-    const logs = Array.from({ length: 10 }, (_, index) => {
-      const events = ["CONNECTED", "DISCONNECTED", "ERROR"];
-      const paths = ["/", "/about", "/contact", "/services", "/products"];
-      const randomEvent = events[Math.floor(Math.random() * events.length)];
-      const randomPath = paths[Math.floor(Math.random() * paths.length)];
-      const randomDate = new Date(Date.now() - Math.floor(Math.random() * 100000000));
-      return {
-        domain: config.domain,
-        ip: "192.168.1.1",
-        path: randomPath,
-        event: randomEvent,
-        date: randomDate.toLocaleString()
-      };
-    });
+        if (Array.isArray(config.log) && config.log.length) {
+          config.log.slice(0, 30).forEach((log) => {
+            const row = document.createElement("tr");
+            const logValues = [
+              config.domain,
+              log.ip,
+              log.path,
+              log.event,
+              new Date(log.time.split(" ")[1]).toLocaleString(),
+            ];
+            logValues.forEach((value) => {
+              const cell = document.createElement("td");
+              cell.textContent = value;
+              row.appendChild(cell);
+            });
+            tbody.appendChild(row);
+          });
+        } else {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.setAttribute("colspan", "5");
+          cell.textContent = "No logs available for all domains.";
+          row.appendChild(cell);
+          tbody.appendChild(row);
+        }
+        proxyContainer.appendChild(tbody);
 
-    logs.sort((a, b) => new Date(b.date) - new Date(a.date));
-    logs.forEach(log => {
-      const row = document.createElement("tr");
-      Object.values(log).forEach(value => {
-        const cell = document.createElement("td");
-        cell.textContent = value;
-        row.appendChild(cell);
-      });
-      tbody.appendChild(row);
-    });
-    proxyContainer.appendChild(tbody);
+        return proxyContainer;
+      }
 
-    return proxyContainer;
-  }
+      function displayProxies(configs) {
+        const proxiesGridList = document.querySelector(".proxies-logs");
+        proxiesGridList.innerHTML = "";
+        configs.forEach((config) => {
+          const proxyBox = createProxyBox(config);
+          proxiesGridList.appendChild(proxyBox);
+        });
+      }
 
-  axios.post("/api/proxys").then(function (response) {
-    const configs = response.data.configs;
-    const proxiesGridList = document.querySelector(".proxies-logs");
+      axios
+        .post("/api/proxys")
+        .then(function (response) {
+          const configs = response.data.configs;
+          displayProxies(configs);
 
-    configs.forEach((config) => {
-      const proxyBox = createProxyBox(config);
-      proxiesGridList.appendChild(proxyBox);
-    });
-  }).catch(function (error) {
-    console.log(error);
-  });
-</script>
-</body>
+          const searchInput = document.getElementById("search-input");
+          searchInput.addEventListener("keyup", function () {
+            const filteredConfigs = configs.filter((config) =>
+              config.domain.toLowerCase().includes(this.value.toLowerCase())
+            );
+            displayProxies(filteredConfigs);
+          });
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+    </script>
+  </body>
 </html>

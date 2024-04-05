@@ -76,9 +76,18 @@ pub async fn handle_api_request(configs: SharedConfig, proxy_stats: SharedProxyS
                 config_map.insert("pubkey".to_string(), config.ssl_certificate.clone().map(serde_json::Value::String).unwrap_or(serde_json::Value::Null));
                 config_map.insert("privkey".to_string(), config.ssl_certificate_key.clone().map(serde_json::Value::String).unwrap_or(serde_json::Value::Null));
                 
-                // Adding total connections for each domain
                 if let Some(proxy_stats) = proxies.get(&config.domain) {
                     config_map.insert("total_connections".to_string(), serde_json::Value::Number(serde_json::Number::from(proxy_stats.total_connections)));
+                    config_map.insert("last_active".to_string(), serde_json::Value::String(proxy_stats.last_active.clone()));
+                    config_map.insert("log".to_string(), serde_json::Value::Array(proxy_stats.log.iter().map(|log| {
+                        serde_json::json!({
+                            "domain": log.domain,
+                            "ip": log.ip.to_string(),
+                            "path": log.path.clone().unwrap_or_default(),
+                            "event": log.event,
+                            "time": log.time,
+                        })
+                    }).collect()));
                 } else {
                     config_map.insert("total_connections".to_string(), serde_json::Value::Number(serde_json::Number::from(0)));
                 }

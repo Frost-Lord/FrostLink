@@ -14,7 +14,7 @@ use rustls::{
 use tokio_rustls::TlsAcceptor;
 use crate::BColors;
 use crate::components;
-
+use crate::global::global;
 use crate::file::SharedConfig;
 use crate::statistics::SharedProxyStatistics;
 
@@ -31,7 +31,7 @@ fn load_cert_and_key(cert_path: &Path, key_path: &Path) -> std::io::Result<(Vec<
 
 pub async fn handle_client(configs: SharedConfig, proxy_stats: SharedProxyStatistics, colors: BColors, client_stream: TcpStream) -> std::io::Result<()> {
     let start_time = Instant::now();
-
+    let ip = client_stream.peer_addr().unwrap().ip();
     let mut buffer = vec![0; 1024];
     let mut rustls_config = ServerConfig::new(NoClientAuth::new());
 
@@ -92,6 +92,9 @@ pub async fn handle_client(configs: SharedConfig, proxy_stats: SharedProxyStatis
             let stats = proxy_stats.lock().await;
             let proxies = &mut *stats.proxies.lock().await;
             let domain_stats = proxies.entry(config.domain.clone()).or_default();
+            let path = request_str.lines().next().unwrap_or_default().split_whitespace().nth(1).unwrap_or_default();
+            
+            global::logger(&config.domain, ip, Some(path.to_string()), "HTTP", domain_stats, start_time);  
             domain_stats.total_connections += 1;
         }
         
