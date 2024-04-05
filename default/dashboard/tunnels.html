@@ -35,8 +35,8 @@
             <th>ID</th>
             <th>Domain</th>
             <th>Target</th>
-            <th>SSL Status</th>
-            <th>HTTPS Status</th>
+            <th>SSL</th>
+            <th>HTTP</th>
             <th>Manage</th>
             <th>Delete</th>
           </tr>
@@ -135,7 +135,7 @@ function displayProxies(configs) {
       config.domain,
       config.host,
       config.SSL ? "Enabled" : "Disabled",
-      config.HTTPS ? "Enabled" : "Disabled",
+      config.HTTP ? "Enabled" : "Disabled",
     ];
 
     plainTextData.forEach((text) => {
