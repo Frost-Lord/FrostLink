@@ -14,7 +14,7 @@ use rustls::{
 use tokio_rustls::TlsAcceptor;
 use crate::BColors;
 use crate::components;
-use crate::global::global;
+use crate::global;
 use crate::file::SharedConfig;
 use crate::statistics::SharedProxyStatistics;
 
@@ -89,12 +89,13 @@ pub async fn handle_client(configs: SharedConfig, proxy_stats: SharedProxyStatis
 
     if let Some(config) = domain_and_location {
         {
-            let stats = proxy_stats.lock().await;
-            let proxies = &mut *stats.proxies.lock().await;
-            let domain_stats = proxies.entry(config.domain.clone()).or_default();
+            let stats_lock = proxy_stats.lock().await;
+            let mut proxies_lock = stats_lock.proxies.lock().await;
+            let domain_stats = proxies_lock.entry(config.domain.clone()).or_default();
+            global::request_size(true, domain_stats, size as u64);
             let path = request_str.lines().next().unwrap_or_default().split_whitespace().nth(1).unwrap_or_default();
-            
-            global::logger(&config.domain, ip, Some(path.to_string()), "HTTP", domain_stats, start_time);  
+   
+            global::globallog::logger(&config.domain, ip, Some(path.to_string()), "HTTP", domain_stats, start_time);  
             domain_stats.total_connections += 1;
         }
         
@@ -114,6 +115,10 @@ pub async fn handle_client(configs: SharedConfig, proxy_stats: SharedProxyStatis
             if io::copy(&mut remote_stream, &mut tls_stream).await.is_ok() {
                 let ip = tls_stream.get_ref().0.peer_addr().unwrap().ip();
                 let elapsed_time = start_time.elapsed();
+                let stats = proxy_stats.lock().await;
+                let mut proxies = stats.proxies.lock().await;
+                let domain_stats = proxies.entry(config.domain.clone()).or_default();
+                global::request_size(true, domain_stats, size as u64);
                 println!("Time taken: {:?} : {} : {} : {} : SSL: True", elapsed_time, ip, domain, request_path);
             } else {
                 eprintln!("{}[ARCTICARCH]{} Failed to send response to client", colors.fail, colors.endc);

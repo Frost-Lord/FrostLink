@@ -62,8 +62,10 @@ pub struct DataUsage {
 #[derive(Clone, Default)]
 pub struct ProxyDomainStats {
     pub total_connections: usize,
-    pub log: Vec<LogEntry>,
     pub last_active: String,
+    pub total_request: usize,
+    pub total_response: usize,
+    pub log: Vec<LogEntry>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -2,7 +2,15 @@ use crate::statistics::{LogEntry, ProxyDomainStats};
 use chrono::Local;
 use std::time::Instant;
 
-pub mod global {
+pub fn request_size(rtype: bool, domain_stats: &mut ProxyDomainStats, size: u64) {
+    if rtype {
+        domain_stats.total_request += size as usize;
+    } else {
+        domain_stats.total_response += size as usize;
+    }
+}
+
+pub mod globallog {
     use super::*;
 
     pub fn logger(

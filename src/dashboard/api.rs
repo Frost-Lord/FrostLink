@@ -79,6 +79,8 @@ pub async fn handle_api_request(configs: SharedConfig, proxy_stats: SharedProxyS
                 if let Some(proxy_stats) = proxies.get(&config.domain) {
                     config_map.insert("total_connections".to_string(), serde_json::Value::Number(serde_json::Number::from(proxy_stats.total_connections)));
                     config_map.insert("last_active".to_string(), serde_json::Value::String(proxy_stats.last_active.clone()));
+                    config_map.insert("total_request".to_string(), serde_json::Value::Number(serde_json::Number::from(proxy_stats.total_request)));
+                    config_map.insert("total_response".to_string(), serde_json::Value::Number(serde_json::Number::from(proxy_stats.total_response)));
                     config_map.insert("log".to_string(), serde_json::Value::Array(proxy_stats.log.iter().map(|log| {
                         serde_json::json!({
                             "domain": log.domain,
@@ -90,6 +92,8 @@ pub async fn handle_api_request(configs: SharedConfig, proxy_stats: SharedProxyS
                     }).collect()));
                 } else {
                     config_map.insert("total_connections".to_string(), serde_json::Value::Number(serde_json::Number::from(0)));
+                    config_map.insert("total_request".to_string(), serde_json::Value::Number(serde_json::Number::from(0)));
+                    config_map.insert("total_response".to_string(), serde_json::Value::Number(serde_json::Number::from(0)));
                 }
 
                 serde_json::Value::Object(config_map)
