@@ -1,6 +1,6 @@
-# ArcticArch
+# FrostLink
 
-ArcticArch is a powerful and flexible reverse proxy tool developed in Rust. It's designed to route requests efficiently from public domains to local servers, supporting both HTTP and HTTPS traffic. ArcticArch is particularly useful for exposing local development servers to the internet or for setting up a custom routing scheme in a microservices architecture.
+FrostLink is a powerful and flexible reverse proxy tool developed in Rust. It's designed to route requests efficiently from public domains to local servers, supporting both HTTP and HTTPS traffic. ArcticArch is particularly useful for exposing local development servers to the internet or for setting up a custom routing scheme in a microservices architecture.
 
 ## Features
 
@@ -14,12 +14,12 @@ ArcticArch is a powerful and flexible reverse proxy tool developed in Rust. It's
 
 ### Configuration
 
-ArcticArch requires domain configuration files to be placed in the `./domains` directory. Each file should have the `.conf` extension and follow this structure:
+FrostLink requires domain configuration files to be placed in the `./domains` directory. Each file should have the `.conf` extension and follow this structure:
 
 ### Running the Proxy
 
 1. **Set Up Configuration Files:** Create `.conf` files for each domain in the `./domains` directory.
-2. **Start ArcticArch:** Execute the main program. By default, it listens on ports 80 (HTTP) and 443 (HTTPS).
+2. **Start FrostLink:** Execute the main program. By default, it listens on ports 80 (HTTP) and 443 (HTTPS).
 3. **Monitor Activity:** Observe the console output for logs detailing requests and server activity.
 
 ### Example Configuration File
@@ -44,7 +44,7 @@ SSLCert: {
 
 ### Dashboard
 
-ArcticArch includes a user-friendly dashboard for easy monitoring and management. Here's a glimpse of what the dashboard looks like:
+FrostLink includes a user-friendly dashboard for easy monitoring and management. Here's a glimpse of what the dashboard looks like:
 
 <p align="center">
     <img src="./images/dashboard.png">
