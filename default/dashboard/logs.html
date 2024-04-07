@@ -34,6 +34,7 @@
       </main>
     </div>
     <script>
+      let count = 0;
       function populateLogsTable(tbody, configs) {
         tbody.innerHTML = "";
         configs.forEach((config) => {
@@ -54,6 +55,16 @@
               });
               tbody.appendChild(row);
             });
+          } else {
+            if (count === 0) {
+              const row = document.createElement("tr");
+              const cell = document.createElement("td");
+              cell.textContent = "No logs available";
+              cell.colSpan = 5;
+              row.appendChild(cell);
+              tbody.appendChild(row);
+              count++;
+            }
           }
         });
       }
