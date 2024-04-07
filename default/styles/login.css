@@ -9,14 +9,38 @@ body, html {
     height: 100vh;
 }
 
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .login-container {
+    display: flex;
+    align-items: center;
     background: linear-gradient(145deg, #4d9fec, #141e30);
     padding: 40px;
     border-radius: 10px;
     box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4);
     color: #fff;
-    width: 300px;
+    max-width: 600px;
 }
+
+.image-container {
+    flex: 1;
+    min-width: 250px;
+    height: 300px;
+    background-image: url('https://i.ibb.co/vktbVkK/demo-vector-27808745-removebg-preview-1.png');
+    background-size: cover;
+    background-position: center;
+    margin-right: 2rem;
+}
+
+.login-box {
+    flex-grow: 1;
+    max-width: 300px;
+}
+
 
 .login-box h2 {
     text-align: center;
