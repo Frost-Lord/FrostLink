@@ -50,6 +50,7 @@
           <div class="modal-header">
             <h2 id="tunnelsHeader">Tunnels</h2>
             <h2 id="sslHeader">SSL</h2>
+            <h2 id="rawHeader">Raw</h2>
         </div>        
           <form id="tunnelForm">
             <label for="domain">Domain:</label><br />
@@ -68,6 +69,10 @@
               <label for="ssl_certificate_key">SSL Certificate Key Path:</label><br />
               <input type="text" id="ssl_certificate_key" name="ssl_certificate_key" /><br />
               <input type="submit" value="Save" />
+          </form>
+          <form id="rawForm">
+            <textarea id="rawConfig" rows="10" cols="118"></textarea>
+            <input type="submit" value="Save" />
           </form>
       </div>
   </div>
@@ -106,20 +111,33 @@ document.addEventListener("DOMContentLoaded", function () {
   const sslHeader = document.getElementById("sslHeader");
   const tunnelForm = document.getElementById("tunnelForm");
   const sslForm = document.getElementById("sslForm");
+  const rawForm = document.getElementById("rawForm");
 
   sslForm.style.display = "none";
+  rawForm.style.display = "none";
 
   tunnelsHeader.addEventListener("click", function () {
     tunnelForm.style.display = "block";
     sslForm.style.display = "none";
+    rawForm.style.display = "none";
     tunnelsHeader.classList.add("active");
     sslHeader.classList.remove("active");
   });
 
   sslHeader.addEventListener("click", function () {
     sslForm.style.display = "block";
+    rawForm.style.display = "none";
     tunnelForm.style.display = "none";
     sslHeader.classList.add("active");
+    tunnelsHeader.classList.remove("active");
+  });
+
+  rawHeader.addEventListener("click", function () {
+    rawForm.style.display = "block";
+    sslForm.style.display = "none";
+    tunnelForm.style.display = "none";
+    rawHeader.classList.add("active");
+    sslHeader.classList.remove("active");
     tunnelsHeader.classList.remove("active");
   });
 });
@@ -163,6 +181,20 @@ function manageConfig(domain) {
   document.getElementById('AllowHTTP').checked = config ? config.HTTP : false;
   document.getElementById('ssl_certificate').value = config.pubkey || '';
   document.getElementById('ssl_certificate_key').value = config.privkey || '';
+  document.getElementById('rawConfig').value = `server: {
+    domain: ${config.domain}
+    location: ${config.host}
+
+    connection: {
+        AllowSSL: ${config.SSL}
+        AllowHTTP: ${config.HTTP}
+    }
+}
+
+SSLCert: {
+    ssl_certificate: ${config.pubkey}
+    ssl_certificate_key: ${config.privkey}
+}`
 }
 
 tunnelsHeader.addEventListener("click", function() {
