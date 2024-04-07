@@ -13,9 +13,12 @@ html {
 }
 
 .sidebar {
-  width: 250px;
-  background-color: #252526;
+  width: 200px;
+  background: linear-gradient(293deg, #20282e, #121526);
+  border-radius: 0px 15px 15px 0px;
   padding: 20px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 .logo h1 {
@@ -34,21 +37,23 @@ html {
 }
 
 .menu li a {
-  color: #bbb;
+  color: #d8d6d6;
   text-decoration: none;
+  margin-top: 1rem;
   display: flex;
   align-items: center;
   padding: 15px;
+  font-size: larger;
   border-radius: 5px;
   transition: background-color 0.3s;
 }
-
 .menu li a i {
-  margin-right: 10px;
+  margin-right: 20px;
 }
 
 .menu li a:hover {
-  background-color: #333;
+  background: linear-gradient(293deg, #20282e, #1a224d);
+  border-radius: 15px;
 }
 
 .main-content {

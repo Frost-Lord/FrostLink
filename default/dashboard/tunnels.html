@@ -54,9 +54,9 @@
         </div>        
           <form id="tunnelForm">
             <label for="domain">Domain:</label><br />
-            <input type="text" id="domain" name="domain" /><br />
+            <input type="text" id="domain" name="domain" style="border: 1px solid #ccc;"><br />
             <label for="location">Location:</label><br />
-            <input type="text" id="location" name="location" /><br />
+            <input type="text" id="location" name="location" style="border: 1px solid #ccc;" /><br />
             <label for="AllowSSL">Allow SSL:</label>
             <input type="checkbox" id="AllowSSL" name="AllowSSL" /><br />
             <label for="AllowHTTP">Allow HTTP:</label>
@@ -65,13 +65,13 @@
         </form>
           <form id="sslForm">
               <label for="ssl_certificate">SSL Certificate Path:</label><br />
-              <input type="text" id="ssl_certificate" name="ssl_certificate" /><br />
+              <input type="text" id="ssl_certificate" name="ssl_certificate" style="border: 1px solid #ccc;" /><br />
               <label for="ssl_certificate_key">SSL Certificate Key Path:</label><br />
-              <input type="text" id="ssl_certificate_key" name="ssl_certificate_key" /><br />
+              <input type="text" id="ssl_certificate_key" name="ssl_certificate_key" style="border: 1px solid #ccc;" /><br />
               <input type="submit" value="Save" />
           </form>
           <form id="rawForm">
-            <textarea id="rawConfig" rows="10" cols="118"></textarea>
+            <textarea id="rawConfig" rows="18" cols="118" style="border: 1px solid #ccc;"></textarea>
             <input type="submit" value="Save" />
           </form>
       </div>
@@ -86,6 +86,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const configs = response.data.configs;
       TunnelData = configs;
       displayProxies(configs);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("domain") && urlParams.get("domain") !== null) {
+        manageConfig(urlParams.get("domain"));
+      }
     })
     .catch(function (error) {
       console.log(error);
@@ -109,6 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Selecting elements
   const tunnelsHeader = document.getElementById("tunnelsHeader");
   const sslHeader = document.getElementById("sslHeader");
+  const rawHeader = document.getElementById("rawHeader");
   const tunnelForm = document.getElementById("tunnelForm");
   const sslForm = document.getElementById("sslForm");
   const rawForm = document.getElementById("rawForm");
@@ -122,6 +128,7 @@ document.addEventListener("DOMContentLoaded", function () {
     rawForm.style.display = "none";
     tunnelsHeader.classList.add("active");
     sslHeader.classList.remove("active");
+    rawHeader.classList.remove("active");
   });
 
   sslHeader.addEventListener("click", function () {
@@ -130,6 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tunnelForm.style.display = "none";
     sslHeader.classList.add("active");
     tunnelsHeader.classList.remove("active");
+    rawHeader.classList.remove("active");
   });
 
   rawHeader.addEventListener("click", function () {
@@ -170,18 +178,17 @@ function displayProxies(configs) {
 }
 
 function manageConfig(domain) {
-  console.log("Managing config for", domain);
   managemodel.style.display = "block";
 
   const config = TunnelData.find(c => c.domain === domain);
 
-  document.getElementById('domain').value = config ? config.domain : '';
-  document.getElementById('location').value = config ? config.host : '';
-  document.getElementById('AllowSSL').checked = config ? config.SSL : false;
-  document.getElementById('AllowHTTP').checked = config ? config.HTTP : false;
-  document.getElementById('ssl_certificate').value = config.pubkey || '';
-  document.getElementById('ssl_certificate_key').value = config.privkey || '';
-  document.getElementById('rawConfig').value = `server: {
+  document.getElementById('domain').value = config?.domain || '';
+  document.getElementById('location').value = config?.host || '';
+  document.getElementById('AllowSSL').checked = config?.SSL || false;
+  document.getElementById('AllowHTTP').checked = config?.HTTP || false;
+  document.getElementById('ssl_certificate').value = config?.pubkey || '';
+  document.getElementById('ssl_certificate_key').value = config?.privkey || '';
+  document.getElementById('rawConfig').value = config ? `server: {
     domain: ${config.domain}
     location: ${config.host}
 
@@ -192,9 +199,9 @@ function manageConfig(domain) {
 }
 
 SSLCert: {
-    ssl_certificate: ${config.pubkey}
-    ssl_certificate_key: ${config.privkey}
-}`
+    ssl_certificate: ${config.pubkey || ''}
+    ssl_certificate_key: ${config.privkey || ''}
+}` : '';
 }
 
 tunnelsHeader.addEventListener("click", function() {

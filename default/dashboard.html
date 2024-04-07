@@ -71,7 +71,7 @@
         const proxyBox = document.createElement("div");
         proxyBox.className = "proxy-box";
         proxyBox.onclick = () =>
-          (location.href = "/dashboard/" + config.domain + "/manage");
+          (location.href = "/dashboard/tunnels?domain=" + config.domain);
 
         const proxyInfo = document.createElement("div");
         proxyInfo.className = "proxy-info";

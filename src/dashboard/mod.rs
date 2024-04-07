@@ -17,7 +17,6 @@ lazy_static! {
     pub static ref SESSIONS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
-
 pub async fn handle_request(configs: SharedConfig, proxy_stats: SharedProxyStatistics, mut stream: TcpStream) -> Result<()> {
     let mut buffer = [0; 1024];
     let _ = stream.read(&mut buffer).await?;
@@ -40,7 +39,10 @@ pub async fn handle_request(configs: SharedConfig, proxy_stats: SharedProxyStati
 }
 
 async fn serve_html_file(stream: &mut TcpStream, request_path: &str, buffer: &[u8]) -> Result<()> {
-    let no_session_required = request_path == "/" || request_path.starts_with("/styles/") || request_path == "/login";
+    // Strip off the query string from the request path, if present
+    let path_without_query = request_path.split('?').next().unwrap_or("");
+
+    let no_session_required = path_without_query == "/" || path_without_query.starts_with("/styles/") || path_without_query == "/login";
 
     if !no_session_required {
         let buffer_string = String::from_utf8_lossy(buffer).to_string();
@@ -62,7 +64,7 @@ async fn serve_html_file(stream: &mut TcpStream, request_path: &str, buffer: &[u
             let session_id = cookie.value();
             let sessions = SESSIONS.lock().await;
             if sessions.contains_key(session_id) {
-                let file_path = format!("./default{}.html", request_path);
+                let file_path = format!("./default{}.html", path_without_query);
                 if let Some(contents) = cache_get(&file_path).await {
                     stream.write_all(contents.as_bytes()).await?;
                 } else {
@@ -76,15 +78,15 @@ async fn serve_html_file(stream: &mut TcpStream, request_path: &str, buffer: &[u
             stream.write_all(b"HTTP/1.1 302 Found\r\nLocation: /\r\n\r\n").await?;
         }
     } else {
-        let file_path = if request_path == "/" {
+        let file_path = if path_without_query == "/" {
             "./default/login.html".to_string()
         } else {
-            format!("./default{}.html", request_path)
+            format!("./default{}.html", path_without_query)
         };
     
         let response = if let Some(contents) = cache_get(&file_path).await {
             contents
-        } else if request_path.starts_with("/styles/") {
+        } else if path_without_query.starts_with("/styles/") {
             serve_css_file(&buffer).await?
         } else {
             cache_get("./default/404.html").await.unwrap_or_else(|| String::from("HTTP/1.1 404 NOT FOUND\r\n\r\n"))
@@ -95,7 +97,6 @@ async fn serve_html_file(stream: &mut TcpStream, request_path: &str, buffer: &[u
     stream.flush().await?;
     Ok(())
 }
-
 
 async fn cache_get(path: &str) -> Option<String> {
     let mut cache = CACHE.lock().await;

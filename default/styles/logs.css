@@ -13,25 +13,35 @@
     font-weight: bold;
   }
   
-  .proxy-log-container {
+  table {
     width: 100%;
-    background-color: #333;
-    color: #fff;
+    background-color: #292929;
     border-collapse: collapse;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
   }
   
-  .proxy-log-container th, .proxy-log-container td {
-    padding: 10px;
-    border: 1px solid #555;
+  th,
+  td {
+    padding: 12px 15px;
+    text-align: left;
   }
   
-  .proxy-log-container th {
-    color: #4d9fec;
+  th {
+    background-color: #007bff;
+    color: #ffffff;
+    font-weight: normal;
   }
   
-  .proxy-log-container tbody tr:hover {
-    background-color: #444;
+  tr:nth-child(even) {
+    background-color: #312f2f;
   }
+  
+  tr:hover {
+    background-color: #4b4848;
+  }
+
   @media (max-width: 768px) {
     .container {
       flex-direction: column;
