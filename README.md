@@ -48,6 +48,8 @@ FrostLink includes a user-friendly dashboard for easy monitoring and management.
 
 <p align="center">
     <img src="./images/dashboard.png">
+    <img src="./images/tunnels.png">
+    <img src="./images/logs.png">
 </p>
 
 ### Contributing
