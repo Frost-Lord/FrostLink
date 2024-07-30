@@ -1,9 +1,7 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::option::Option;
-use std::string::String;
-use std::vec::Vec;
 use std::fs;
+use std::vec::Vec;
 
 #[derive(Clone)]
 pub struct Config {
@@ -100,4 +98,10 @@ pub fn read_configs() -> Vec<Config> {
         Err(e) => println!("Error reading ./domains directory: {}", e),
     }
     configs
+}
+
+pub async fn update_configs(shared_configs: SharedConfig) {
+    let configs = read_configs();
+    let mut configs_lock = shared_configs.lock().await;
+    *configs_lock = configs;
 }

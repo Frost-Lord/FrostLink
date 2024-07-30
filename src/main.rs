@@ -49,11 +49,23 @@ async fn main() -> std::io::Result<()> {
     let colors = BColors::new();
 
     let proxy_stats = Arc::new(Mutex::new(ProxyStatistics::default()));
-    let configs = file::read_configs();
-    let shared_configs = Arc::new(Mutex::new(configs));
+    let shared_configs = Arc::new(Mutex::new(file::read_configs()));
 
-    let listener_http = TcpListener::bind("0.0.0.0:80").await?;
-    let listener_https = TcpListener::bind("0.0.0.0:443").await?;
+    let listener_http = match TcpListener::bind("0.0.0.0:80").await {
+        Ok(listener) => listener,
+        Err(e) => {
+            eprintln!("{}[ARCTICARCH]{} Failed to bind to port 80: {}", colors.blue, colors.endc, e);
+            return Err(e);
+        }
+    };
+
+    let listener_https = match TcpListener::bind("0.0.0.0:443").await {
+        Ok(listener) => listener,
+        Err(e) => {
+            eprintln!("{}[ARCTICARCH]{} Failed to bind to port 443: {}", colors.blue, colors.endc, e);
+            return Err(e);
+        }
+    };
 
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 80", colors.blue, colors.endc);
     println!("{}[ARCTICARCH]{} Reverse proxy started on port 443", colors.blue, colors.endc);
@@ -73,6 +85,7 @@ async fn main() -> std::io::Result<()> {
                 let colors_clone = colors.clone();
                 let proxy_stats_clone = proxy_stats.clone();
                 tokio::spawn(async move {
+                    file::update_configs(configs.clone()).await;
                     http::handle_client(configs, proxy_stats_clone, colors_clone, client_stream).await.unwrap();
                 });
             },
@@ -81,6 +94,7 @@ async fn main() -> std::io::Result<()> {
                 let colors_clone = colors.clone();
                 let proxy_stats_clone = proxy_stats.clone();
                 tokio::spawn(async move {
+                    file::update_configs(configs.clone()).await;
                     ssl::handle_client(configs, proxy_stats_clone, colors_clone, client_stream).await.unwrap();
                 });
             },
@@ -88,6 +102,7 @@ async fn main() -> std::io::Result<()> {
                 let configs = shared_configs.clone();
                 let proxy_stats_clone = proxy_stats.clone();
                 tokio::spawn(async move {
+                    file::update_configs(configs.clone()).await;
                     dashboard::handle_request(configs, proxy_stats_clone, client_stream).await.unwrap();
                 });
             },
